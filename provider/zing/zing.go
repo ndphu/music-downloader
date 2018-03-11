@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/ndphu/music-downloader/download"
+	"github.com/ndphu/music-downloader/provider"
 	iohelper "github.com/ndphu/music-downloader/utils/io"
 	"io/ioutil"
 	"log"
@@ -21,22 +21,26 @@ var (
 	ZING_HOST string = "mp3.zing.vn"
 )
 
-type ZingDownloader struct {
+type ZingProvider struct {
 }
 
-func NewZingDownloader() *ZingDownloader {
-	return &ZingDownloader{}
+func NewProvider() *ZingProvider {
+	return &ZingProvider{}
 }
 
-func (*ZingDownloader) GetSupportedSites() []string {
+func (*ZingProvider) GetName() string {
+	return "zing"
+}
+
+func (*ZingProvider) GetSupportedSites() []string {
 	return []string{ZING_HOST}
 }
 
-func (*ZingDownloader) IsSiteSupported(site string) bool {
+func (*ZingProvider) IsSiteSupported(site string) bool {
 	return site == ZING_HOST
 }
 
-func (d *ZingDownloader) Download(context *download.DownloadContext) error {
+func (d *ZingProvider) Download(context *provider.DownloadContext) error {
 	doc, err := goquery.NewDocument(context.URL.String())
 	if err != nil {
 		return err
@@ -51,7 +55,7 @@ func (d *ZingDownloader) Download(context *download.DownloadContext) error {
 	return d.download(doc, dataXML, context)
 }
 
-func (d *ZingDownloader) download(doc *goquery.Document, dataXML string, context *download.DownloadContext) error {
+func (d *ZingProvider) download(doc *goquery.Document, dataXML string, context *provider.DownloadContext) error {
 	log.Printf("Data XML = %s\n", dataXML)
 	dataUrl, err := url.Parse(fmt.Sprintf("https://%s/xhr%s", ZING_HOST, dataXML))
 
@@ -68,7 +72,7 @@ func (d *ZingDownloader) download(doc *goquery.Document, dataXML string, context
 	}
 }
 
-func downloadSong(dataUrl *url.URL, context *download.DownloadContext) error {
+func downloadSong(dataUrl *url.URL, context *provider.DownloadContext) error {
 	resp, err := http.Get(dataUrl.String())
 	if err != nil {
 		return err
@@ -95,7 +99,7 @@ func downloadSong(dataUrl *url.URL, context *download.DownloadContext) error {
 	return iohelper.DownloadFileWithRetry(songResponse.Data.Name+".mp3", "https:"+songResponse.Data.Source.Normal, 5)
 }
 
-func downloadAlbum(doc *goquery.Document, dataUrl *url.URL, context *download.DownloadContext) error {
+func downloadAlbum(doc *goquery.Document, dataUrl *url.URL, context *provider.DownloadContext) error {
 	title := strings.Trim(doc.Find("div.info-content h1").First().Text(), " ")
 	log.Println("Album tile is \"" + title + "\"")
 	outputDir := context.Output + "/" + iohelper.CleanupFileName(title)

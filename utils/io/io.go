@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/user"
+	"path"
 	"strings"
 )
 
@@ -76,4 +78,32 @@ func ReadFromUrl(input *url.URL) ([]byte, error) {
 
 	log.Println("Reading body...")
 	return ioutil.ReadAll(resp.Body)
+}
+
+func GetWithCookie(input *url.URL, cookie *http.Cookie) ([]byte, error) {
+	client := http.Client{}
+	req, err := http.NewRequest("GET", input.String(), nil)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	req.AddCookie(cookie)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+
+}
+
+func GetHomeDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return usr.HomeDir
+}
+
+func GetAuthDir() string {
+	return path.Join(GetHomeDir(), ".music-downloader", "auth")
 }

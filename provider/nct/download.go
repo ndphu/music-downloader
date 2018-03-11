@@ -3,11 +3,11 @@ package nct
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/ndphu/music-downloader/download"
+	"github.com/ndphu/music-downloader/provider"
 	"github.com/ndphu/music-downloader/utils"
 	iohelper "github.com/ndphu/music-downloader/utils/io"
-	"log"
 	"net/url"
 	"os"
 	"path"
@@ -19,27 +19,33 @@ var (
 	NCT_HOST = "www.nhaccuatui.com"
 )
 
-type NCTDownloader struct {
+type NCTProvider struct {
 }
 
-func NewDownloader() *NCTDownloader {
-	return &NCTDownloader{}
+func NewProvider() *NCTProvider {
+	return &NCTProvider{}
 }
 
-func (*NCTDownloader) GetSupportedSites() []string {
+func (*NCTProvider) GetName() string {
+	return "nct"
+}
+
+func (*NCTProvider) GetSupportedSites() []string {
 	return []string{NCT_HOST}
 }
 
-func (*NCTDownloader) IsSiteSupported(site string) bool {
+func (*NCTProvider) IsSiteSupported(site string) bool {
 	return site == NCT_HOST
 }
 
-func (*NCTDownloader) Download(c *download.DownloadContext) error {
+func (*NCTProvider) Download(c *provider.DownloadContext) error {
 	ajaxUrl, pageTitle, err := crawWebPage(c.URL)
 	if err != nil {
 		return err
 	}
-	log.Println("AjaxURL = " + ajaxUrl.String())
+	if ajaxUrl == nil {
+		panic(errors.New("No Ajax URL found."))
+	}
 
 	trackList, err := getTracklist(ajaxUrl)
 	if err != nil {
@@ -59,8 +65,8 @@ func (*NCTDownloader) Download(c *download.DownloadContext) error {
 	return nil
 }
 
-func downloadAlbum(trackList *Tracklist, c *download.DownloadContext) error {
-	log.Printf("Found %d items\n", len(trackList.Tracks))
+func downloadAlbum(trackList *Tracklist, c *provider.DownloadContext) error {
+	fmt.Printf("Found %d items\n", len(trackList.Tracks))
 	c.Output = path.Join(c.Output, trackList.PageTitle)
 	err := os.MkdirAll(c.Output, 0777)
 	if err != nil {
@@ -73,11 +79,11 @@ func downloadAlbum(trackList *Tracklist, c *download.DownloadContext) error {
 		if len(c.Indexes) > 0 && !utils.ArrayContains(c.Indexes, i+1) {
 			continue
 		}
-		log.Printf("[%d] '%s'\n", i, utils.TrimTitle(track.Title))
+		fmt.Printf("[%d] '%s'\n", i, utils.TrimTitle(track.Title))
 
 		w.Add(1)
 		runningThread++
-		go func(_t Track, _c *download.DownloadContext) {
+		go func(_t Track, _c *provider.DownloadContext) {
 			defer w.Done()
 			err := downloadTrack(&_t, _c)
 			if err != nil {
@@ -94,11 +100,20 @@ func downloadAlbum(trackList *Tracklist, c *download.DownloadContext) error {
 	return nil
 }
 
-func downloadTrack(t *Track, c *download.DownloadContext) error {
+func downloadTrack(t *Track, c *provider.DownloadContext) error {
 	title := utils.TrimTitle(t.Title)
 	filePath := iohelper.CleanupFileName(path.Join(c.Output, title+".mp3"))
-	log.Println("Downloading song " + title + "...")
-	return iohelper.DownloadFileWithRetry(filePath, utils.TrimTitle(t.Location), 5)
+	location := utils.TrimTitle(t.Location)
+	locationHQ := utils.TrimTitle(t.LocationHQ)
+
+	if locationHQ != "" {
+		fmt.Println("Downloading song " + title + " (VIP)...")
+		return iohelper.DownloadFileWithRetry(filePath, locationHQ, 5)
+	} else {
+		fmt.Println("Downloading song " + title + "...")
+		return iohelper.DownloadFileWithRetry(filePath, location, 5)
+	}
+
 }
 
 func crawWebPage(input *url.URL) (ajaxUrl *url.URL, title string, err error) {
@@ -106,9 +121,7 @@ func crawWebPage(input *url.URL) (ajaxUrl *url.URL, title string, err error) {
 	if err != nil {
 		return nil, "", err
 	}
-
 	rawAjaxUrl := ""
-
 	doc.Find("div.playing_absolute script").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		script := s.Text()
 		line := strings.Split(script, "\n")
@@ -119,21 +132,27 @@ func crawWebPage(input *url.URL) (ajaxUrl *url.URL, title string, err error) {
 		}
 		return rawAjaxUrl == ""
 	})
-
 	title = doc.Find("title").First().Text()
-
 	ajaxUrl, err = url.Parse(rawAjaxUrl)
-
 	return ajaxUrl, title, err
 }
 
 func getTracklist(ajaxUrl *url.URL) (*Tracklist, error) {
-	data, err := iohelper.ReadFromUrl(ajaxUrl)
+	savedCookie := getAuthCookie()
+	var data []byte
+	var err error
+
+	if savedCookie == nil {
+		data, err = iohelper.ReadFromUrl(ajaxUrl)
+	} else {
+		fmt.Println("Already login. Using saved cookie...")
+		data, err = iohelper.GetWithCookie(ajaxUrl, savedCookie)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("Data size = %d\n", len(data))
+	fmt.Printf("Data size = %d\n", len(data))
 
 	resp := Tracklist{}
 

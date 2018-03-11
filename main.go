@@ -1,25 +1,25 @@
 package main
 
 import (
-	"github.com/ndphu/music-downloader/download"
-	"github.com/ndphu/music-downloader/download/nct"
-	"github.com/ndphu/music-downloader/download/zing"
+	"fmt"
+	"github.com/ndphu/music-downloader/provider"
+	"github.com/ndphu/music-downloader/provider/nct"
+	"github.com/ndphu/music-downloader/provider/zing"
 	"gopkg.in/urfave/cli.v2"
-	"log"
 	"os"
 )
 
 func main() {
 
-	downloadHandler := download.NewDownloadHandler([]download.Downloader{
-		zing.NewZingDownloader(),
-		nct.NewDownloader(),
+	providerService := provider.NewProviderService([]provider.Provider{
+		zing.NewProvider(),
+		nct.NewProvider(),
 	})
 
 	app := &cli.App{
 		Name:    "music-downloader",
 		Usage:   "download music from multiple sources",
-		Version: "0.0.2",
+		Version: "0.0.3",
 		Commands: []*cli.Command{
 			{
 				Name:    "download",
@@ -42,46 +42,72 @@ func main() {
 						Name:    "thread-count",
 						Aliases: []string{"n"},
 						Value:   1,
-						Usage:   "Number of parallel download. No parallel download by default.",
+						Usage:   "Number of parallel provider. No parallel download by default.",
 					},
 				},
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() == 0 {
-						log.Panic("Input URL(s) is required")
+						fmt.Println("Need to provide input URL")
 					}
-					err := downloadHandler.HandleDownload(c)
+					err := providerService.HandleDownload(c)
 					if err != nil {
 						panic(err)
 					} else {
-						log.Println("Done without error")
+						fmt.Println("Done")
 					}
 					return err
 				},
 			},
 			{
-				Name:  "login",
-				Usage: "Login to the music provider to download high quality files",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "host",
-						Value: "",
-						Usage: "The the login host",
+				Name:  "provider",
+				Usage: "Action for providers",
+				Subcommands: []*cli.Command{
+					{
+						Name:    "list",
+						Aliases: []string{"ls"},
+						Usage:   "Shows all supported providers",
+						Action: func(c *cli.Context) error {
+							fmt.Println("Supported providers: ")
+							for _, p := range providerService.GetProviders() {
+								fmt.Println("\t" + p.GetName())
+							}
+							return nil
+						},
 					},
-					&cli.StringFlag{
-						Name:    "username",
-						Aliases: []string{"u"},
-						Value:   "",
-						Usage:   "The login username",
+					{
+						Name:  "login",
+						Usage: "Login to a specify provider",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:    "name",
+								Aliases: []string{"n"},
+								Value:   "",
+								Usage:   "The name of the provider. Use 'provider ls' for all supported providers",
+							},
+							&cli.StringFlag{
+								Name:    "username",
+								Aliases: []string{"u"},
+								Value:   "",
+								Usage:   "The login username",
+							},
+							&cli.StringFlag{
+								Name:    "password",
+								Aliases: []string{"p"},
+								Value:   "",
+								Usage:   "The login password",
+							},
+						},
+
+						Action: func(c *cli.Context) error {
+							err := providerService.Login(c)
+							if err != nil {
+								panic(err)
+							} else {
+								fmt.Println("Done")
+							}
+							return err
+						},
 					},
-					&cli.StringFlag{
-						Name:    "password",
-						Aliases: []string{"p"},
-						Value:   "",
-						Usage:   "The login password",
-					},
-				},
-				Action: func(c *cli.Context) error {
-					return nil
 				},
 			},
 		},

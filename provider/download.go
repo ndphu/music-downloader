@@ -1,21 +1,15 @@
-package download
+package provider
 
 import (
 	"errors"
 	"fmt"
 	"gopkg.in/urfave/cli.v2"
-	"log"
+
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 )
-
-type Downloader interface {
-	GetSupportedSites() []string
-	IsSiteSupported(string) bool
-	Download(*DownloadContext) error
-}
 
 type DownloadContext struct {
 	URL         *url.URL
@@ -24,21 +18,10 @@ type DownloadContext struct {
 	ThreadCount int
 }
 
-type DownloadHandler struct {
-	downloaders []Downloader
-}
-
-func NewDownloadHandler(_downloaders []Downloader) *DownloadHandler {
-	handler := &DownloadHandler{
-		downloaders: _downloaders,
-	}
-	return handler
-}
-
-func (handler *DownloadHandler) HandleDownload(c *cli.Context) error {
+func (providerService *ProviderService) HandleDownload(c *cli.Context) error {
 
 	outputDir := c.String("output")
-	log.Printf("Output directory = %s\n", outputDir)
+	fmt.Printf("Output directory = %s\n", outputDir)
 
 	var indexInt []int
 	option := c.String("index")
@@ -59,12 +42,11 @@ func (handler *DownloadHandler) HandleDownload(c *cli.Context) error {
 
 	err := os.MkdirAll(outputDir, 0777)
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 
 	for i := 0; i < c.Args().Len(); i++ {
 		rawurl := c.Args().Get(i)
-		log.Printf("Input URL = %s\n", rawurl)
 
 		inputUrl, err := url.Parse(rawurl)
 		if err != nil {
@@ -80,11 +62,11 @@ func (handler *DownloadHandler) HandleDownload(c *cli.Context) error {
 
 		hadProvider := false
 		hostname := inputUrl.Hostname()
-		log.Printf("Downloading from host: %s\n", hostname)
-		for _, h := range handler.downloaders {
-			if h.IsSiteSupported(hostname) {
+
+		for _, p := range providerService.providers {
+			if p.IsSiteSupported(hostname) {
 				hadProvider = true
-				err = h.Download(context)
+				err = p.Download(context)
 				if err != nil {
 					return err
 				}
