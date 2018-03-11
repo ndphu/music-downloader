@@ -3,8 +3,10 @@ package io
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -63,4 +65,15 @@ func CleanupFileName(input string) string {
 		output = strings.Replace(output, r, "", -1)
 	}
 	return output
+}
+
+func ReadFromUrl(input *url.URL) ([]byte, error) {
+	resp, err := http.Get(input.String())
+	if err != nil {
+		return []byte{}, err
+	}
+	defer resp.Body.Close()
+
+	log.Println("Reading body...")
+	return ioutil.ReadAll(resp.Body)
 }

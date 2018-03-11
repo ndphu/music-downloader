@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/ndphu/music-downloader/download"
+	"github.com/ndphu/music-downloader/download/nct"
 	"github.com/ndphu/music-downloader/download/zing"
 	"gopkg.in/urfave/cli.v2"
 	"log"
@@ -12,12 +13,13 @@ func main() {
 
 	downloadHandler := download.NewDownloadHandler([]download.Downloader{
 		zing.NewZingDownloader(),
+		nct.NewDownloader(),
 	})
 
 	app := &cli.App{
 		Name:    "music-downloader",
 		Usage:   "download music from multiple sources",
-		Version: "0.0.1",
+		Version: "0.0.2",
 		Commands: []*cli.Command{
 			{
 				Name:    "download",

@@ -1,6 +1,8 @@
 package download
 
 import (
+	"errors"
+	"fmt"
 	"gopkg.in/urfave/cli.v2"
 	"log"
 	"net/url"
@@ -76,15 +78,20 @@ func (handler *DownloadHandler) HandleDownload(c *cli.Context) error {
 			ThreadCount: c.Int("thread-count"),
 		}
 
+		hadProvider := false
 		hostname := inputUrl.Hostname()
 		log.Printf("Downloading from host: %s\n", hostname)
 		for _, h := range handler.downloaders {
 			if h.IsSiteSupported(hostname) {
+				hadProvider = true
 				err = h.Download(context)
 				if err != nil {
 					return err
 				}
 			}
+		}
+		if !hadProvider {
+			return errors.New(fmt.Sprintf("Current music provider [%s] is not supported", hostname))
 		}
 	}
 
