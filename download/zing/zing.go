@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/ndphu/music-downloader/download"
-	"io"
+	iohelper "github.com/ndphu/music-downloader/utils/io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 var (
@@ -91,13 +92,13 @@ func downloadSong(dataUrl *url.URL, context *download.DownloadContext) error {
 		return errors.New(songResponse.Msg)
 	}
 
-	return downloadFileWithRetry(songResponse.Data.Name+".mp3", "https:"+songResponse.Data.Source.Normal, 5)
+	return iohelper.DownloadFileWithRetry(songResponse.Data.Name+".mp3", "https:"+songResponse.Data.Source.Normal, 5)
 }
 
 func downloadAlbum(doc *goquery.Document, dataUrl *url.URL, context *download.DownloadContext) error {
 	title := strings.Trim(doc.Find("div.info-content h1").First().Text(), " ")
 	log.Println("Album tile is \"" + title + "\"")
-	outputDir := context.Output + "/" + title
+	outputDir := context.Output + "/" + iohelper.CleanupFileName(title)
 	err := os.MkdirAll(outputDir, 0777)
 	if err != nil {
 		log.Panic(err)
@@ -135,6 +136,9 @@ func downloadAlbum(doc *goquery.Document, dataUrl *url.URL, context *download.Do
 		log.Printf("Only download song(s) with index = %v\n", context.Indexes)
 	}
 
+	w := sync.WaitGroup{}
+	runningThreadCount := 0
+
 	for _, item := range albumData.Data.Items {
 		log.Printf("%v\n", item.Order)
 		if filterByIndex {
@@ -159,6 +163,8 @@ func downloadAlbum(doc *goquery.Document, dataUrl *url.URL, context *download.Do
 			}
 		}
 
+		item.Name = iohelper.CleanupFileName(item.Name)
+
 		log.Printf("Downloading item \"%s\"\n", item.Name)
 		var downloadUrl string
 		if item.IsVip {
@@ -170,13 +176,23 @@ func downloadAlbum(doc *goquery.Document, dataUrl *url.URL, context *download.Do
 		if strings.Index(downloadUrl, "//") == 0 {
 			downloadUrl = "https:" + downloadUrl
 		}
+		w.Add(1)
+		runningThreadCount++
+		go func(_url string, _name string) {
 
-		err = downloadFileWithRetry(fmt.Sprintf("%s/%s.mp3", outputDir, item.Name), downloadUrl, 5)
-		if err != nil {
-			log.Panic(err)
-			return err
+			defer w.Done()
+			err = iohelper.DownloadFileWithRetry(fmt.Sprintf("%s/%s.mp3", outputDir, _name), _url, 5)
+			if err != nil {
+				log.Panic(err)
+			}
+		}(downloadUrl, item.Name)
+		if runningThreadCount == context.ThreadCount {
+			w.Wait()
+			runningThreadCount = 0
 		}
 	}
+
+	w.Wait()
 
 	return nil
 }
@@ -188,52 +204,4 @@ func contains(arr []int, val int) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-func downloadFileWithRetry(filepath string, fileUrl string, retry int) (err error) {
-	try := 0
-
-	for {
-		try++
-		err = downloadFile(filepath, fileUrl)
-		if err == nil {
-			return err
-		}
-		if try == retry {
-			return err
-		} else {
-			log.Printf("%v\n", err)
-			log.Printf("Retrying... %d\n", try)
-		}
-	}
-	return err
-}
-
-func downloadFile(filepath string, fileUrl string) (err error) {
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Get the data
-	resp, err := http.Get(fileUrl)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Check server response
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %s", resp.Status)
-	}
-
-	// Writer the body to file
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

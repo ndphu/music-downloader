@@ -36,6 +36,12 @@ func main() {
 						Value:   "",
 						Usage:   "List for song tobe downloaded (by index)",
 					},
+					&cli.IntFlag{
+						Name:    "thread-count",
+						Aliases: []string{"n"},
+						Value:   1,
+						Usage:   "Number of parallel download. No parallel download by default.",
+					},
 				},
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() == 0 {

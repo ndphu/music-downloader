@@ -16,9 +16,10 @@ type Downloader interface {
 }
 
 type DownloadContext struct {
-	URL     *url.URL
-	Output  string
-	Indexes []int
+	URL         *url.URL
+	Output      string
+	Indexes     []int
+	ThreadCount int
 }
 
 type DownloadHandler struct {
@@ -69,16 +70,17 @@ func (handler *DownloadHandler) HandleDownload(c *cli.Context) error {
 		}
 
 		context := &DownloadContext{
-			URL:     inputUrl,
-			Output:  outputDir,
-			Indexes: indexInt,
+			URL:         inputUrl,
+			Output:      outputDir,
+			Indexes:     indexInt,
+			ThreadCount: c.Int("thread-count"),
 		}
 
 		hostname := inputUrl.Hostname()
 		log.Printf("Downloading from host: %s\n", hostname)
-		for _, downloader := range handler.downloaders {
-			if downloader.IsSiteSupported(hostname) {
-				err = downloader.Download(context)
+		for _, h := range handler.downloaders {
+			if h.IsSiteSupported(hostname) {
+				err = h.Download(context)
 				if err != nil {
 					return err
 				}
