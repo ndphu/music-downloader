@@ -16,7 +16,7 @@ func main() {
 
 	app := &cli.App{
 		Name:    "music-downloader",
-		Usage:   "download music from multiple source",
+		Usage:   "download music from multiple sources",
 		Version: "0.0.1",
 		Commands: []*cli.Command{
 			{
@@ -48,6 +48,32 @@ func main() {
 						log.Println("Done without error")
 					}
 					return err
+				},
+			},
+			{
+				Name:  "login",
+				Usage: "Login to the music provider to download high quality files",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "host",
+						Value: "",
+						Usage: "The the login host",
+					},
+					&cli.StringFlag{
+						Name:    "username",
+						Aliases: []string{"u"},
+						Value:   "",
+						Usage:   "The login username",
+					},
+					&cli.StringFlag{
+						Name:    "password",
+						Aliases: []string{"p"},
+						Value:   "",
+						Usage:   "The login password",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					return nil
 				},
 			},
 		},
