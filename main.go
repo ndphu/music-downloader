@@ -26,7 +26,7 @@ func main() {
 				Aliases:   []string{"dl"},
 				Usage:     "Download music file(s) from a URL.\nInput could be a link to a playlist (album) or a single song",
 				Flags:     provider.DownloadFlags,
-				ArgsUsage: "[url 1] [url 2] ...",
+				ArgsUsage: "[link_1] [link_2]...[link_n]",
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() == 0 {
 						fmt.Println("Need to provide input URL(s)")

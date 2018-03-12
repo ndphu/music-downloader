@@ -1,6 +1,7 @@
 package utils
 
 import (
+	iohelper "github.com/ndphu/music-downloader/utils/io"
 	"strings"
 )
 
@@ -14,7 +15,11 @@ func ArrayContains(arr []int, val int) bool {
 }
 
 func TrimTitle(title string) string {
-	output := title
+	return iohelper.CleanupFileName(TrimCDATA(title))
+}
+
+func TrimCDATA(input string) string {
+	output := input
 	for _, ch := range []string{
 		"\n",
 		" ",

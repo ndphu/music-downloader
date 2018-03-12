@@ -1,6 +1,7 @@
 package io
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -63,8 +64,8 @@ func DownloadFile(filepath string, fileUrl string) (err error) {
 
 func CleanupFileName(input string) string {
 	output := input
-	for _, r := range []string{"?", ":"} {
-		output = strings.Replace(output, r, "", -1)
+	for _, r := range []string{"?", ":", "/"} {
+		output = strings.Replace(output, r, "-", -1)
 	}
 	return output
 }
@@ -90,6 +91,12 @@ func GetWithCookie(input *url.URL, cookie *http.Cookie) ([]byte, error) {
 	req.AddCookie(cookie)
 
 	resp, err := client.Do(req)
+	if err != nil {
+		return []byte{}, err
+	}
+	if resp.StatusCode != 200 {
+		return []byte{}, errors.New(fmt.Sprintf("Server response with invalid status code %d", resp.StatusCode))
+	}
 	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
