@@ -34,7 +34,7 @@ func (*NCTProvider) IsSiteSupported(site string) bool {
 }
 
 func (*NCTProvider) Download(c *provider.DownloadContext) error {
-	if strings.Index(c.URL.Path, "/nghe-si-") == 0 {
+	if strings.Index(c.URL.Path, "/nghe-si-") == 0 || c.AlbumList {
 		return downloadAllAlbumForArtist(c)
 	} else {
 		return downloadAlbumOrTrack(c)

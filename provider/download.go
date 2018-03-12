@@ -31,6 +31,12 @@ var (
 			Value:   1,
 			Usage:   "Number of parallel provider. No parallel download by default.",
 		},
+		&cli.BoolFlag{
+			Name:    "album-list",
+			Aliases: []string{"al"},
+			Value:   false,
+			Usage:   "Force download allbum list. Use this flag when you provide a link to a list of album.",
+		},
 	}
 )
 
@@ -39,6 +45,7 @@ type DownloadContext struct {
 	Output      string
 	Indexes     []int
 	ThreadCount int
+	AlbumList   bool
 }
 
 func (providerService *ProviderService) HandleDownload(c *cli.Context) error {
@@ -81,6 +88,7 @@ func (providerService *ProviderService) HandleDownload(c *cli.Context) error {
 			Output:      outputDir,
 			Indexes:     indexInt,
 			ThreadCount: c.Int("thread-count"),
+			AlbumList:   c.Bool("album-list"),
 		}
 
 		hadProvider := false
