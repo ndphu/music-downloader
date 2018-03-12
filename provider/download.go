@@ -11,6 +11,29 @@ import (
 	"strings"
 )
 
+var (
+	DownloadFlags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "output",
+			Aliases: []string{"o", "out"},
+			Value:   ".",
+			Usage:   "Specify the output location to save downloaded file(s)",
+		},
+		&cli.StringFlag{
+			Name:    "index",
+			Aliases: []string{"i"},
+			Value:   "",
+			Usage:   "List for song tobe downloaded (by index)",
+		},
+		&cli.IntFlag{
+			Name:    "thread-count",
+			Aliases: []string{"n"},
+			Value:   1,
+			Usage:   "Number of parallel provider. No parallel download by default.",
+		},
+	}
+)
+
 type DownloadContext struct {
 	URL         *url.URL
 	Output      string

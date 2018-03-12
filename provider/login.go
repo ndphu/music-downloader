@@ -10,6 +10,29 @@ type LoginContext struct {
 	Password string
 }
 
+var (
+	LoginFlags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "name",
+			Aliases: []string{"n"},
+			Value:   "",
+			Usage:   "The name of the provider. Use 'provider ls' for all supported providers",
+		},
+		&cli.StringFlag{
+			Name:    "username",
+			Aliases: []string{"u"},
+			Value:   "",
+			Usage:   "The login username",
+		},
+		&cli.StringFlag{
+			Name:    "password",
+			Aliases: []string{"p"},
+			Value:   "",
+			Usage:   "The login password",
+		},
+	}
+)
+
 func (s *ProviderService) Login(c *cli.Context) error {
 	hadProvider := false
 
@@ -33,4 +56,8 @@ func (s *ProviderService) Login(c *cli.Context) error {
 		return errors.New("No provider supported: " + providerName)
 	}
 	return nil
+}
+
+func (s *ProviderService) LoginActionHandler(c *cli.Context) error {
+	return s.Login(c)
 }

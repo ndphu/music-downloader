@@ -1,5 +1,10 @@
 package provider
 
+import (
+	"fmt"
+	"gopkg.in/urfave/cli.v2"
+)
+
 type Provider interface {
 	GetName() string
 	Login(*LoginContext) error
@@ -20,4 +25,12 @@ func NewProviderService(_providers []Provider) *ProviderService {
 
 func (s *ProviderService) GetProviders() []Provider {
 	return s.providers
+}
+
+func (s *ProviderService) ListProviderHandler(c *cli.Context) error {
+	fmt.Println("Supported providers: ")
+	for _, p := range s.GetProviders() {
+		fmt.Println("  - " + p.GetName())
+	}
+	return nil
 }

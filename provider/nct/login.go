@@ -49,9 +49,13 @@ func (p *NCTProvider) Login(c *provider.LoginContext) error {
 			if err = ioutil.WriteFile(COOKIE_PATH, data, 0777); err != nil {
 				panic(err)
 			}
+			fmt.Println("Login successfully!")
 			return nil
 		}
 	}
+
+	fmt.Println("Login fail!")
+
 	return errors.New("Login fail!")
 }
 
