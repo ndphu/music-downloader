@@ -36,7 +36,7 @@ Login successfully!
 NOTE: Your login information will be cached in `$HOME/.music-downloader/auth`, so you don't need to login every time you use the CLI.
 
 ### download
-`music-downloader download --output <output_dir> --thread-count <number_of_parrallel_download> <link_1> <link_2>...<link_n>`
+`music-downloader download --output <output_dir> --thread-count <number_of_parrallel_download> --album-list <link_1> <link_2>...<link_n>`
 
 If no `output` provided, it will use the current directory.
 We don't use parallel download by default.
