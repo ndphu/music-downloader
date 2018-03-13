@@ -9,7 +9,7 @@ This cli downloads music from multiple source (zing, nhaccuatui,...)
 * Download High Quality track (if logged with a VIP account)
 
 ## Installation
-Download the prebuilt binary found or install from source
+Download the prebuilt binaries or install from source
 ```
 go get github.com/ndphu/music-downloader
 go install github.com/ndphu/music-downloader
