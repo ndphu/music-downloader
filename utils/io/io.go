@@ -64,7 +64,7 @@ func DownloadFile(filepath string, fileUrl string) (err error) {
 
 func CleanupFileName(input string) string {
 	output := input
-	for _, r := range []string{"?", ":", "/"} {
+	for _, r := range []string{"?", ":", "/", "\\", "*", "\"", "<", ">"} {
 		output = strings.Replace(output, r, "-", -1)
 	}
 	return output
