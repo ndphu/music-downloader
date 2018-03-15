@@ -22,6 +22,9 @@ func downloadAllAlbumForArtist(c *provider.DownloadContext) error {
 			break
 		}
 		current = getNextPage(doc)
+		if current == nil {
+			break
+		}
 		doc, err = goquery.NewDocument(current.String())
 		if err != nil {
 			return err
@@ -68,7 +71,7 @@ func getNextPage(doc *goquery.Document) *url.URL {
 
 func parseAlbumInPage(doc *goquery.Document) []*url.URL {
 	var albums []*url.URL
-	doc.Find(".list_album li .info_album h3 a").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	doc.Find(".list_album .info_album h3 a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		href, err := url.Parse(s.AttrOr("href", ""))
 		albums = append(albums, href)
 		return err == nil
