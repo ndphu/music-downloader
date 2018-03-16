@@ -81,11 +81,15 @@ func ReadFromUrl(input *url.URL) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func GetWithCookie(input *url.URL, cookie *http.Cookie) ([]byte, error) {
+func GetWithCookie(input *url.URL, cookie *http.Cookie, headers map[string]string) ([]byte, error) {
 	client := http.Client{}
 	req, err := http.NewRequest("GET", input.String(), nil)
 	if err != nil {
 		return []byte{}, err
+	}
+
+	for k, v := range headers {
+		req.Header.Add(k, v)
 	}
 
 	req.AddCookie(cookie)

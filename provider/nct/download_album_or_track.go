@@ -1,12 +1,14 @@
 package nct
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/ndphu/music-downloader/provider"
 	"github.com/ndphu/music-downloader/utils"
 	iohelper "github.com/ndphu/music-downloader/utils/io"
+	"net/url"
 	"os"
 	"path"
 	"sync"
@@ -87,7 +89,12 @@ func downloadTrack(t *Track, c *provider.DownloadContext) error {
 	location := utils.TrimCDATA(t.Location)
 	locationHQ := utils.TrimCDATA(t.LocationHQ)
 
-	if locationHQ != "" {
+	locationLossless := locationLossless(t)
+	if locationLossless != "" {
+		fmt.Println("Downloading song " + title + " (Lossless)...")
+		fmt.Println("URL = " + locationLossless)
+		return iohelper.DownloadFileWithRetry(filePath, locationLossless, 5)
+	} else if locationHQ != "" {
 		fmt.Println("Downloading song " + title + " (VIP)...")
 		return iohelper.DownloadFileWithRetry(filePath, locationHQ, 5)
 	} else {
@@ -95,4 +102,34 @@ func downloadTrack(t *Track, c *provider.DownloadContext) error {
 		return iohelper.DownloadFileWithRetry(filePath, location, 5)
 	}
 
+}
+
+func locationLossless(t *Track) string {
+	losslessUrl, _ := url.Parse(fmt.Sprintf("https://www.nhaccuatui.com/download/song/%s_lossless", utils.TrimCDATA(t.Key)))
+	savedCookie := getAuthCookie()
+	var data []byte
+	var err error
+
+	if savedCookie == nil {
+		return ""
+	} else {
+		headers := make(map[string]string)
+		headers["X-Requested-With"] = "XMLHttpRequest"
+		headers["Referer"] = utils.TrimCDATA(t.Info)
+		data, err = iohelper.GetWithCookie(losslessUrl, savedCookie, headers)
+	}
+	if err != nil {
+		panic(err)
+		return ""
+	}
+	losslessResponse := LosslessResponse{}
+
+	err = json.Unmarshal(data, &losslessResponse)
+	if err != nil {
+		return ""
+	}
+	if losslessResponse.Data["is_charge"] == "false" {
+		return ""
+	}
+	return losslessResponse.Data["stream_url"]
 }

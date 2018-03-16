@@ -70,7 +70,7 @@ func getTracklist(ajaxUrl *url.URL) (*Tracklist, error) {
 		data, err = iohelper.ReadFromUrl(ajaxUrl)
 	} else {
 		fmt.Println("Already login. Using saved cookie...")
-		data, err = iohelper.GetWithCookie(ajaxUrl, savedCookie)
+		data, err = iohelper.GetWithCookie(ajaxUrl, savedCookie, make(map[string]string))
 	}
 	if err != nil {
 		return nil, err

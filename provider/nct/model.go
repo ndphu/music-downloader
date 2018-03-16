@@ -13,4 +13,12 @@ type Track struct {
 	Location   string `xml:"location"`
 	LocationHQ string `xml:"locationHQ"`
 	HasHQ      string `xml:"hasHQ"`
+	Info       string `xml:"info"`
+}
+
+type LosslessResponse struct {
+	StatusReadMode bool              `json:"STATUS_READ_MODE"`
+	Data           map[string]string `json:"data"`
+	ErrorCode      int               `json:"error_code"`
+	ErrorMessage   string            `json:"error_message`
 }
