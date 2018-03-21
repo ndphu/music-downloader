@@ -4,7 +4,7 @@ import (
 	iohelper "github.com/ndphu/music-downloader/utils/io"
 	"strings"
 )
-
+// Ngan Test 2
 func ArrayContains(arr []int, val int) bool {
 	for _, cur := range arr {
 		if val == cur {
